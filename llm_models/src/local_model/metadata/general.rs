@@ -44,10 +44,10 @@ pub struct SourceMetadata {
 #[derive(Debug, Clone, Copy)]
 pub enum FileType {
     AllF32 = 0,
-    MostlyF16 = 1,
+    Mostlyf32 = 1,
     MostlyQ4_0 = 2,
     MostlyQ4_1 = 3,
-    MostlyQ4_1SomeF16 = 4,
+    MostlyQ4_1Somef32 = 4,
     MostlyQ8_0 = 7,
     MostlyQ5_0 = 8,
     MostlyQ5_1 = 9,
@@ -66,10 +66,10 @@ impl FileType {
     pub fn from_u32(u: u32) -> crate::Result<Self> {
         match u {
             0 => Ok(Self::AllF32),
-            1 => Ok(Self::MostlyF16),
+            1 => Ok(Self::Mostlyf32),
             2 => Ok(Self::MostlyQ4_0),
             3 => Ok(Self::MostlyQ4_1),
-            4 => Ok(Self::MostlyQ4_1SomeF16),
+            4 => Ok(Self::MostlyQ4_1Somef32),
             7 => Ok(Self::MostlyQ8_0),
             8 => Ok(Self::MostlyQ5_0),
             9 => Ok(Self::MostlyQ5_1),
@@ -89,10 +89,10 @@ impl FileType {
     pub fn to_ggml_d_type(&self) -> GgmlDType {
         match self {
             Self::AllF32 => GgmlDType::F32,
-            Self::MostlyF16 => GgmlDType::F16,
+            Self::Mostlyf32 => GgmlDType::F32,  // Changed from f32 to F32
             Self::MostlyQ4_0 => GgmlDType::Q4_0,
             Self::MostlyQ4_1 => GgmlDType::Q4_1,
-            Self::MostlyQ4_1SomeF16 => GgmlDType::Q4_1,
+            Self::MostlyQ4_1Somef32 => GgmlDType::Q4_1,
             Self::MostlyQ8_0 => GgmlDType::Q8_0,
             Self::MostlyQ5_0 => GgmlDType::Q5_0,
             Self::MostlyQ5_1 => GgmlDType::Q5_1,

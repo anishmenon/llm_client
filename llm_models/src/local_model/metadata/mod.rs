@@ -42,8 +42,8 @@ impl LocalLlmMetadata {
         ctx_size: u64,
         batch_size: Option<u64>,
     ) -> crate::Result<u64> {
-        let total_layers_size = self.layers.total_size_blocks_bytes();
-        let block_count = self.layers.count_blocks();
+        let total_layers_size = self.layers.total_size_blocks_bytes() as u64;
+        let block_count = self.layers.count_blocks() as u64;
         let context_size = self.estimate_context_size(ctx_size, batch_size);
         let total_size = total_layers_size + context_size;
         Ok(total_size / block_count)

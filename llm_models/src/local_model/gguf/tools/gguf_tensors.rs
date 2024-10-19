@@ -29,7 +29,6 @@ pub const QK8_1: usize = 32;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GgmlDType {
     F32,
-    F16,
     Q4_0,
     Q4_1,
     Q5_0,
@@ -48,7 +47,6 @@ impl GgmlDType {
     pub(crate) fn from_u32(u: u32) -> crate::Result<Self> {
         let dtype = match u {
             0 => Self::F32,
-            1 => Self::F16,
             2 => Self::Q4_0,
             3 => Self::Q4_1,
             6 => Self::Q5_0,
@@ -70,7 +68,6 @@ impl GgmlDType {
     pub fn type_size(&self) -> usize {
         match self {
             Self::F32 => 4,
-            Self::F16 => 2,
             Self::Q4_0 => std::mem::size_of::<BlockQ4_0>(),
             Self::Q4_1 => std::mem::size_of::<BlockQ4_1>(),
             Self::Q5_0 => std::mem::size_of::<BlockQ5_0>(),
@@ -91,7 +88,6 @@ impl GgmlDType {
     pub fn block_size(&self) -> usize {
         match self {
             Self::F32 => 1,
-            Self::F16 => 1,
             Self::Q4_0 => QK4_0,
             Self::Q4_1 => QK4_1,
             Self::Q5_0 => QK5_0,
@@ -105,7 +101,6 @@ impl GgmlDType {
     pub fn bits_per_weight(&self) -> f64 {
         match self {
             Self::F32 => 32.0,
-            Self::F16 => 16.0,
             _ => (self.type_size() as f64 * 8.0) / self.block_size() as f64,
         }
     }
@@ -114,65 +109,65 @@ impl GgmlDType {
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
 pub struct BlockQ4_0 {
-    pub(crate) d: f16,
+    pub(crate) d: f32,
     pub(crate) qs: [u8; QK4_0 / 2],
 }
-const _: () = assert!(std::mem::size_of::<BlockQ4_0>() == 18);
+const _: () = assert!(std::mem::size_of::<BlockQ4_0>() == 4 + QK4_0 / 2);
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
 pub struct BlockQ4_1 {
-    pub(crate) d: f16,
-    pub(crate) m: f16,
+    pub(crate) d: f32,
+    pub(crate) m: f32,
     pub(crate) qs: [u8; QK4_1 / 2],
 }
-const _: () = assert!(std::mem::size_of::<BlockQ4_1>() == 20);
+const _: () = assert!(std::mem::size_of::<BlockQ4_1>() == 8 + QK4_1 / 2);
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
 pub struct BlockQ5_0 {
-    pub(crate) d: f16,
+    pub(crate) d: f32,
     pub(crate) qh: [u8; 4],
     pub(crate) qs: [u8; QK5_0 / 2],
 }
-const _: () = assert!(std::mem::size_of::<BlockQ5_0>() == 22);
+const _: () = assert!(std::mem::size_of::<BlockQ5_0>() == 4 + 4 + QK5_0 / 2);
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
 pub struct BlockQ5_1 {
-    pub(crate) d: f16,
-    pub(crate) m: f16,
+    pub(crate) d: f32,
+    pub(crate) m: f32,
     pub(crate) qh: [u8; 4],
     pub(crate) qs: [u8; QK5_1 / 2],
 }
-const _: () = assert!(std::mem::size_of::<BlockQ5_1>() == 24);
+const _: () = assert!(std::mem::size_of::<BlockQ5_1>() == 8 + 4 + QK5_1 / 2);
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
 pub struct BlockQ8_0 {
-    pub(crate) d: f16,
-    pub(crate) qs: [i8; QK8_0],
+    pub(crate) d: f32,
+    pub(crate) qs: [u8; QK8_0],
 }
-const _: () = assert!(std::mem::size_of::<BlockQ8_0>() == 34);
+const _: () = assert!(std::mem::size_of::<BlockQ8_0>() == 4 + QK8_0);
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
 pub struct BlockQ8_1 {
-    pub(crate) d: f16,
-    pub(crate) s: f16,
+    pub(crate) d: f32,
+    pub(crate) s: f32,
     pub(crate) qs: [i8; QK8_1],
 }
-const _: () = assert!(std::mem::size_of::<BlockQ8_1>() == 36);
+const _: () = assert!(std::mem::size_of::<BlockQ8_1>() == 8 + QK8_1);
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
 pub struct BlockQ2K {
     pub(crate) scales: [u8; QK_K / 16],
     pub(crate) qs: [u8; QK_K / 4],
-    pub(crate) d: f16,
-    pub(crate) dmin: f16,
+    pub(crate) d: f32,
+    pub(crate) dmin: f32,
 }
-const _: () = assert!(QK_K / 16 + QK_K / 4 + 2 * 2 == std::mem::size_of::<BlockQ2K>());
+const _: () = assert!(std::mem::size_of::<BlockQ2K>() == QK_K / 16 + QK_K / 4 + 8);
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
@@ -180,32 +175,30 @@ pub struct BlockQ3K {
     pub(crate) hmask: [u8; QK_K / 8],
     pub(crate) qs: [u8; QK_K / 4],
     pub(crate) scales: [u8; 12],
-    pub(crate) d: f16,
+    pub(crate) d: f32,
 }
-const _: () = assert!(QK_K / 8 + QK_K / 4 + 12 + 2 == std::mem::size_of::<BlockQ3K>());
+const _: () = assert!(std::mem::size_of::<BlockQ3K>() == QK_K / 8 + QK_K / 4 + 12 + 4);
 
 #[derive(Debug, Clone, PartialEq)]
-// https://github.com/ggerganov/llama.cpp/blob/468ea24fb4633a0d681f7ac84089566c1c6190cb/k_quants.h#L82
 #[repr(C)]
 pub struct BlockQ4K {
-    pub(crate) d: f16,
-    pub(crate) dmin: f16,
+    pub(crate) d: f32,
+    pub(crate) dmin: f32,
     pub(crate) scales: [u8; K_SCALE_SIZE],
     pub(crate) qs: [u8; QK_K / 2],
 }
-const _: () = assert!(QK_K / 2 + K_SCALE_SIZE + 2 * 2 == std::mem::size_of::<BlockQ4K>());
+const _: () = assert!(std::mem::size_of::<BlockQ4K>() == 8 + K_SCALE_SIZE + QK_K / 2);
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
 pub struct BlockQ5K {
-    pub(crate) d: f16,
-    pub(crate) dmin: f16,
+    pub(crate) d: f32,
+    pub(crate) dmin: f32,
     pub(crate) scales: [u8; K_SCALE_SIZE],
     pub(crate) qh: [u8; QK_K / 8],
     pub(crate) qs: [u8; QK_K / 2],
 }
-const _: () =
-    assert!(QK_K / 8 + QK_K / 2 + 2 * 2 + K_SCALE_SIZE == std::mem::size_of::<BlockQ5K>());
+const _: () = assert!(std::mem::size_of::<BlockQ5K>() == 8 + K_SCALE_SIZE + QK_K / 8 + QK_K / 2);
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]
@@ -213,9 +206,9 @@ pub struct BlockQ6K {
     pub(crate) ql: [u8; QK_K / 2],
     pub(crate) qh: [u8; QK_K / 4],
     pub(crate) scales: [i8; QK_K / 16],
-    pub(crate) d: f16,
+    pub(crate) d: f32,
 }
-const _: () = assert!(3 * QK_K / 4 + QK_K / 16 + 2 == std::mem::size_of::<BlockQ6K>());
+const _: () = assert!(QK_K / 2 + QK_K / 4 + QK_K / 16 + 4 == std::mem::size_of::<BlockQ6K>());
 
 #[derive(Debug, Clone, PartialEq)]
 #[repr(C)]

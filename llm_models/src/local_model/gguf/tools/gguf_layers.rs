@@ -4,17 +4,16 @@ use std::collections::HashMap;
 pub struct GgufLayers(pub HashMap<String, GgufLayer>);
 
 impl GgufLayers {
-    pub fn from_tensors(tensors: &Vec<TensorInfo>) -> Self {
+    pub fn from_tensors(tensors: &[TensorInfo]) -> Self {
         let mut layers: HashMap<String, GgufLayer> = HashMap::new();
 
         for t in tensors {
             let parts: Vec<&str> = t.name.split('.').collect();
 
             let (key, remaining) = if parts[0] == "blk" && parts.len() > 1 {
-                // join first and second part, e.g. blk.%d
-                (format!("{}.{}", parts[0], parts[1]), &parts[2..].join("."))
+                (format!("{}.{}", parts[0], parts[1]), parts[2..].join("."))
             } else {
-                (parts[0].to_string(), &parts[1..].join("."))
+                (parts[0].to_string(), parts[1..].join("."))
             };
 
             layers
@@ -24,7 +23,7 @@ impl GgufLayers {
                     tensors: HashMap::new(),
                 })
                 .tensors
-                .insert(remaining.to_string(), t.clone());
+                .insert(remaining, t.clone());
         }
 
         Self(layers)
@@ -44,12 +43,12 @@ impl GgufLayers {
         self.0.get(key)
     }
 
-    pub fn count(&self) -> u64 {
-        self.0.len() as u64
+    pub fn count(&self) -> usize {
+        self.0.len()
     }
 
-    pub fn count_blocks(&self) -> u64 {
-        self.0.iter().filter(|(k, _)| k.starts_with("blk")).count() as u64
+    pub fn count_blocks(&self) -> usize {
+        self.0.iter().filter(|(k, _)| k.starts_with("blk")).count()
     }
 
     pub fn total_size_bytes(&self) -> u64 {
