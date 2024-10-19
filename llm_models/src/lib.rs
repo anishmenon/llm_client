@@ -1,4 +1,3 @@
-#![feature(f32)]
 use crate::tokenizer::LlmTokenizer;
 pub mod api_model;
 pub mod local_model;
